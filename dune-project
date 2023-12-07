@@ -19,7 +19,7 @@
  (name icpc_domestic2021)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml dune)
+ (depends ocaml dune ocamlgraph)
  (tags
   (topics "to describe" your project)))
 

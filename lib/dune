@@ -1,2 +1,3 @@
 (library
- (name icpc_domestic2021))
+ (name icpc_domestic2021)
+ (libraries ocamlgraph))
