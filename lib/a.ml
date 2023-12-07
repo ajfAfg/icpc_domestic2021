@@ -1,5 +1,3 @@
-exception InvalidInput
-
 (* NOTE: Assume a ≥ b *)
 let rec gcd a b = if b = 0 then a else gcd b (Int.rem a b)
 
@@ -12,6 +10,6 @@ let solve () =
                List.fold_left
                  (fun acc y -> if acc <= y then gcd y acc else gcd acc y)
                  x xs
-           | _ -> raise InvalidInput
+           | _ -> raise Util.InvalidInput
          in
          Printf.printf "%d\n" ans)
