@@ -52,7 +52,7 @@ end
 
 module G = Graph.Persistent.Graph.Concrete (Vertex)
 
-let mem_path graph v u =
+let has_path graph v u =
   let rec mem_path' graph v u seen =
     if v = u then true
     else if seen.(v) then false
@@ -67,12 +67,12 @@ let mem_path graph v u =
 let is_connected graph =
   G.fold_vertex
     (* NOTE: Assume 1 is always contained in `graph`. *)
-      (fun vertex acc -> acc && mem_path graph 1 vertex)
+      (fun vertex acc -> acc && has_path graph 1 vertex)
     graph true
 
 (* NOTE:
    c.f. [グラフのサイクル検出 (閉路検出) by DFS](https://drken1215.hatenablog.com/entry/2023/05/20/200517) *)
-let is_cycle graph =
+let has_cycle graph =
   let rec is_cycle' graph now prev seen finished =
     seen.(now) <- true;
     let ans =
@@ -90,7 +90,7 @@ let is_cycle graph =
   (* NOTE: Assume 1 is always contained in `graph`. *)
   is_cycle' graph 1 ~-1 (make_history ()) (make_history ())
 
-let is_tree graph = is_connected graph && (not @@ is_cycle graph)
+let is_tree graph = is_connected graph && (not @@ has_cycle graph)
 
 (*********************
  * Main
