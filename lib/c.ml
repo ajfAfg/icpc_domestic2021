@@ -1,17 +1,26 @@
 (*********************
  * Syntax
  *********************)
-type op = Plus | Minus
-type exp = ILit of int | Op of op * exp list
+module Syntax = struct
+  type op = Plus | Minus
+  type exp = ILit of int | Op of op * exp list
+end
 
-let integer_of_char c =
-  let i = int_of_char c - int_of_char '0' in
-  if 0 <= i && i <= 9 then i else raise @@ Invalid_argument "integer_of_char"
+(*********************
+ * Parser
+ *********************)
+module Parser : sig
+  val parse_exp : string -> Syntax.exp
+end = struct
+  open Syntax
 
-let integer_of_char_opt c =
-  try Some (integer_of_char c) with Invalid_argument _ -> None
+  let integer_of_char c =
+    let i = int_of_char c - int_of_char '0' in
+    if 0 <= i && i <= 9 then i else raise @@ Invalid_argument "integer_of_char"
 
-let parse_exp dataset =
+  let integer_of_char_opt c =
+    try Some (integer_of_char c) with Invalid_argument _ -> None
+
   let rec parse_root chars =
     let chars, exp1 = parse_non_root chars in
     let chars, op1 = parse_op chars in
@@ -20,6 +29,7 @@ let parse_exp dataset =
     let chars, exp3 = parse_non_root chars in
     if op1 = op2 then (chars, Op (op1, [ exp1; exp2; exp3 ]))
     else raise Util.InvalidInput
+
   and parse_non_root = function
     | [] -> raise Util.InvalidInput
     | c :: chars ->
@@ -35,15 +45,18 @@ let parse_exp dataset =
               if c = ')' then (chars, Op (op, [ exp1; exp2 ]))
               else raise Util.InvalidInput
         else raise Util.InvalidInput
+
   and parse_op = function
     | [] -> raise Util.InvalidInput
     | c :: chars ->
         if c = '+' then (chars, Plus)
         else if c = '-' then (chars, Minus)
         else raise Util.InvalidInput
-  in
-  let rest, exp = dataset |> String.to_seq |> List.of_seq |> parse_root in
-  if rest = [] then exp else raise Util.InvalidInput
+
+  let parse_exp dataset =
+    let rest, exp = dataset |> String.to_seq |> List.of_seq |> parse_root in
+    if rest = [] then exp else raise Util.InvalidInput
+end
 
 (*********************
  * Id
@@ -66,15 +79,13 @@ end
 (*********************
  * Graph
  *********************)
-module Vertex = struct
+module G = Graph.Persistent.Graph.Concrete (struct
   type t = Id.t
 
   let compare = compare
   let hash = Hashtbl.hash
   let equal = ( = )
-end
-
-module G = Graph.Persistent.Graph.Concrete (Vertex)
+end)
 
 (*********************
  * Map
@@ -84,28 +95,28 @@ module IdMap = Map.Make (Id)
 (*********************
  * Main
  *********************)
-let rec graph_labels_of_exp' graph labels id = function
-  | ILit i ->
-      let graph = G.add_vertex graph id in
-      let labels = IdMap.add id (Either.Left i) labels in
-      (graph, labels)
-  | Op (op, exps) ->
-      let id_exp_list = List.map (fun exp -> (Id.create (), exp)) exps in
-      let graph, labels =
-        List.fold_left
-          (fun (graph', labels') (id, exp) ->
-            graph_labels_of_exp' graph' labels' id exp)
-          (graph, labels) id_exp_list
-      in
-      let graph = G.add_vertex graph id in
-      let graph =
-        List.fold_left (fun graph' id' -> G.add_edge graph' id id') graph
-        @@ List.map fst id_exp_list
-      in
-      let labels = IdMap.add id (Either.Right op) labels in
-      (graph, labels)
-
 let graph_labels_of_exp =
+  let rec graph_labels_of_exp' graph labels id = function
+    | Syntax.ILit i ->
+        let graph = G.add_vertex graph id in
+        let labels = IdMap.add id (Either.Left i) labels in
+        (graph, labels)
+    | Op (op, exps) ->
+        let id_exp_list = List.map (fun exp -> (Id.create (), exp)) exps in
+        let graph, labels =
+          List.fold_left
+            (fun (graph', labels') (id, exp) ->
+              graph_labels_of_exp' graph' labels' id exp)
+            (graph, labels) id_exp_list
+        in
+        let graph = G.add_vertex graph id in
+        let graph =
+          List.fold_left (fun graph' id' -> G.add_edge graph' id id') graph
+          @@ List.map fst id_exp_list
+        in
+        let labels = IdMap.add id (Either.Right op) labels in
+        (graph, labels)
+  in
   graph_labels_of_exp' G.empty IdMap.empty @@ Id.create ()
 
 let rec traverse memo parent_opt graph labels id =
@@ -129,7 +140,7 @@ and traverse' memo parent_opt graph labels id =
   in
   match IdMap.find id labels with
   | Either.Left i -> (i, i)
-  | Right Plus ->
+  | Right Syntax.Plus ->
       children
       |> List.map (fun child -> traverse memo (Some id) graph labels child)
       |> List.fold_left
@@ -159,7 +170,9 @@ and traverse' memo parent_opt graph labels id =
 let solve () =
   Util.read_input "-1"
   |> List.iter (fun dataset ->
-         let graph, labels = dataset |> parse_exp |> graph_labels_of_exp in
+         let graph, labels =
+           dataset |> Parser.parse_exp |> graph_labels_of_exp
+         in
          let memo = Hashtbl.create @@ (2 * IdMap.cardinal labels) in
          G.fold_vertex
            (fun id max ->
