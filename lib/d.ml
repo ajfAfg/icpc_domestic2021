@@ -21,33 +21,38 @@ end
 (*********************
  * Main
  *********************)
-(* NOTE: DP by memonization causes stack overflow. *)
-let calc_ans ({ n; bs } : Dataset.t) =
-  let bs =
-    let dummy = 0 in
-    Array.of_list (dummy :: bs)
+let calc_ans ({ n = _; bs } : Dataset.t) =
+  let bs_sum = List.fold_left ( + ) 0 bs in
+
+  let rec dp memo = function
+    | [] -> memo
+    | b :: bs ->
+        let memo' =
+          Array.map
+            (fun bitset ->
+              Big_int.or_big_int bitset @@ Big_int.shift_left_big_int bitset b)
+            memo
+        in
+        for i = b to bs_sum do
+          memo'.(i) <- Big_int.or_big_int memo'.(i) memo.(i - b)
+        done;
+        dp memo' bs
   in
-  let size = Array.fold_left ( + ) 0 bs in
-  let dp =
-    Array.init (n + 1) @@ fun _ ->
-    Array.init (size + 1) @@ fun x ->
-    Array.init (size + 1) @@ fun y -> x = y && y = 0
+  let memo =
+    dp
+      (Array.append [| Big_int.unit_big_int |]
+      @@ Array.init bs_sum (fun _ -> Big_int.zero_big_int))
+      bs
   in
-  for k = 1 to n do
-    for x = 0 to size do
-      for y = 0 to size do
-        dp.(k).(x).(y) <-
-          dp.(k - 1).(x).(y)
-          || (x >= bs.(k) && dp.(k - 1).(x - bs.(k)).(y))
-          || (y >= bs.(k) && dp.(k - 1).(x).(y - bs.(k)))
-      done
-    done
-  done;
+
   let ans = ref 0 in
-  for x = 0 to size do
-    for y = 0 to size do
-      if dp.(n).(x).(y) then ans := max !ans @@ min x y |> min (size - x - y)
-      else ()
+  for x = 0 to bs_sum do
+    for y = 0 to bs_sum do
+      if
+        Big_int.shift_right_big_int memo.(x) y
+        |> Big_int.and_big_int Big_int.unit_big_int
+        |> Big_int.eq_big_int Big_int.unit_big_int
+      then ans := x |> min y |> min (bs_sum - x - y) |> max !ans
     done
   done;
   !ans
