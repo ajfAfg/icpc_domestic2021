@@ -61,7 +61,12 @@ end
 (*********************
  * Id
  *********************)
-module Id = struct
+module Id : sig
+  type t
+
+  val compare : 'a -> 'a -> int
+  val create : unit -> t
+end = struct
   type t = int
 
   let compare = compare
