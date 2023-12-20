@@ -1,4 +1,4 @@
-exception InvalidInput
+exception Invalid_input
 
 let rec read_input terminator =
   let str = read_line () in

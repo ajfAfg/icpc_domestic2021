@@ -7,4 +7,4 @@ let () =
   | "b" -> B.solve ()
   | "c" -> C.solve ()
   | "d" -> D.solve ()
-  | _ -> raise Util.InvalidInput
+  | _ -> raise Util.Invalid_input

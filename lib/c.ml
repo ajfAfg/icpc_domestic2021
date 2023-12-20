@@ -28,10 +28,10 @@ end = struct
     let chars, op2 = parse_op chars in
     let chars, exp3 = parse_non_root chars in
     if op1 = op2 then (chars, Op (op1, [ exp1; exp2; exp3 ]))
-    else raise Util.InvalidInput
+    else raise Util.Invalid_input
 
   and parse_non_root = function
-    | [] -> raise Util.InvalidInput
+    | [] -> raise Util.Invalid_input
     | c :: chars ->
         if Option.is_some @@ integer_of_char_opt c then
           (chars, ILit (integer_of_char c))
@@ -40,22 +40,22 @@ end = struct
           let chars, op = parse_op chars in
           let chars, exp2 = parse_non_root chars in
           match chars with
-          | [] -> raise Util.InvalidInput
+          | [] -> raise Util.Invalid_input
           | c :: chars ->
               if c = ')' then (chars, Op (op, [ exp1; exp2 ]))
-              else raise Util.InvalidInput
-        else raise Util.InvalidInput
+              else raise Util.Invalid_input
+        else raise Util.Invalid_input
 
   and parse_op = function
-    | [] -> raise Util.InvalidInput
+    | [] -> raise Util.Invalid_input
     | c :: chars ->
         if c = '+' then (chars, Plus)
         else if c = '-' then (chars, Minus)
-        else raise Util.InvalidInput
+        else raise Util.Invalid_input
 
   let parse_exp dataset =
     let rest, exp = dataset |> String.to_seq |> List.of_seq |> parse_root in
-    if rest = [] then exp else raise Util.InvalidInput
+    if rest = [] then exp else raise Util.Invalid_input
 end
 
 (*********************

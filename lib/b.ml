@@ -29,7 +29,7 @@ module Dataset = struct
   let parse_input lines =
     let parse_xyn = function
       | [ x; y; n ] -> (x, y, n)
-      | _ -> raise Util.InvalidInput
+      | _ -> raise Util.Invalid_input
     in
     let rec parse_dataset = function
       | [] -> []
@@ -39,7 +39,7 @@ module Dataset = struct
               let lines1, lines2 = List.partition (w + h - 1) lines in
               { w; h; xyn_list = List.map parse_xyn lines1 }
               :: parse_dataset lines2
-          | _ -> raise Util.InvalidInput)
+          | _ -> raise Util.Invalid_input)
     in
     lines
     |> List.map @@ String.split_on_char ' '

@@ -15,7 +15,7 @@ module Dataset = struct
           bs = line |> String.split_on_char ' ' |> List.map @@ int_of_string;
         }
         :: parse_input lines
-    | _ -> raise Util.InvalidInput
+    | _ -> raise Util.Invalid_input
 end
 
 (*********************

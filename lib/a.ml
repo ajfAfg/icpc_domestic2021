@@ -10,6 +10,6 @@ let solve () =
                List.fold_left
                  (fun acc y -> if acc <= y then gcd y acc else gcd acc y)
                  x xs
-           | _ -> raise Util.InvalidInput
+           | _ -> raise Util.Invalid_input
          in
          Printf.printf "%d\n" ans)
